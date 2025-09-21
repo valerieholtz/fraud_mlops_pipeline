@@ -59,6 +59,20 @@ Model promotion
 
 Artifacts upload
 
+## 🔄 Local Deployment with Self-Hosted Runner
+
+In the `mlops_deploy_local` branch, the project extends the GitHub Actions workflow to support **local deployment** using a self-hosted runner. In this setup, the **training and promotion jobs** run on GitHub-hosted runners as usual, but once a new model is promoted to Production, the workflow triggers an additional **deploy-local** job. This job runs on a self-hosted runner installed on the local machine, downloads the updated MLflow registry (`mlruns/`) as an artifact, replaces the local copy, and automatically restarts the FastAPI container. As a result, the API service remains continuously reachable over REST with the latest Production model.  
+
+### Usage
+1. Set up a self-hosted runner on your local machine (see [GitHub’s guide](https://docs.github.com/en/actions/hosting-your-own-runners/adding-self-hosted-runners)).  
+2. Start the runner with `./run.sh` and leave it running in the background.  
+3. Run the workflow from the **Actions tab** in GitHub (or wait for the scheduled monthly trigger).  
+4. After training and promotion complete, the self-hosted runner will update your local `mlruns/` folder and restart the API automatically.  
+5. Access the API at [http://localhost:8000/docs](http://localhost:8000/docs).  
+
+This branch is intended as a demonstration of end-to-end automation without cloud infrastructure. In production, the same logic can be adapted to use a remote MLflow tracking server and cloud deployment targets (AWS/GCP/Azure), removing the need for artifact syncing.
+
+
 📊 Architecture
 flowchart LR
     A[SQLite DB: fraud.db] --> B[Training Script train_model.py]
