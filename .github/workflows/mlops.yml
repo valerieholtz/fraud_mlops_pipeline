@@ -8,7 +8,6 @@ on:
 jobs:
   train-promote:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,7 +24,7 @@ jobs:
           fi
           cat .env
 
-      # Make sure mlruns and data directories exist & are writable
+      # Make sure mlruns, data, and artifacts directories exist & are writable
       - name: Prepare folders
         run: |
           mkdir -p mlruns && chmod -R 777 mlruns
@@ -45,10 +44,37 @@ jobs:
       - name: Run promotion
         run: docker compose run --rm promote
 
-      - name: Upload training artifacts
+      - name: Upload training artifacts (mlruns + plots + DB)
         uses: actions/upload-artifact@v4
         with:
           name: training-artifacts
           path: |
-            artifacts/
             mlruns/
+            artifacts/
+            data/fraud.db
+
+  deploy-local:
+    runs-on: self-hosted   # 👈 must run on your local runner
+    needs: train-promote   # waits until training+promotion finished
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download training artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: training-artifacts
+          path: ./_ci_download
+
+      - name: Replace local mlruns with promoted registry
+        run: |
+          mkdir -p mlruns
+          rm -rf mlruns/*
+          cp -r _ci_download/mlruns/* mlruns/
+          chmod -R 777 mlruns
+
+      - name: Restart API to load latest Production model
+        run: docker compose restart api
+
+      - name: (Optional) Show API health
+        run: curl -s http://localhost:${PORT:-8000}/docs >/dev/null && echo "API is up"
