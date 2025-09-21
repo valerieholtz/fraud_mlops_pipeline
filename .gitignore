@@ -1,0 +1,46 @@
+# macOS system files
+.DS_Store
+
+# Python cache and build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+*.log
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local environment variables
+.env
+
+# MLflow runs and registry
+mlruns/
+mlartifacts/
+
+# Training and evaluation artifacts
+artifacts/
+
+# Data files (local dataset + SQLite DB)
+data/*.csv
+data/*.db
+
+# Ignore temporary copies or backup scripts
+training/* copy.py
+
+# Docker-specific
+.dockerignore
+
+# Jenkins / GitHub Actions internals
+jenkins_home/
+.github/*.log
+
+# IDE/editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
