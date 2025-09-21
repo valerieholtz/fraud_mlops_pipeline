@@ -3,7 +3,7 @@ name: Fraud Detection MLOps
 on:
   schedule:
     - cron: "0 0 1 * *"   # retrain on the 1st of each month
-  workflow_dispatch:       # allow manual trigger
+  workflow_dispatch:       # allow manual trigger for testing
 
 jobs:
   train-promote:
@@ -15,6 +15,15 @@ jobs:
 
       - name: Set up Docker
         uses: docker/setup-buildx-action@v3
+
+      # .env file exists for docker-compose
+      - name: Prepare environment file
+        run: |
+          if [ ! -f .env ]; then
+            echo "Using .env.example as fallback"
+            cp .env.example .env
+          fi
+          cat .env
 
       - name: Build containers
         run: docker compose build
