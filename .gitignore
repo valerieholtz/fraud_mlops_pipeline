@@ -44,3 +44,7 @@ jenkins_home/
 .idea/
 *.swp
 *.swo
+
+
+# Exception: keep the small demo dataset in Git
+!data/fraud_transactions.csv
