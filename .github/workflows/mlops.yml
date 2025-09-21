@@ -30,6 +30,7 @@ jobs:
         run: |
           mkdir -p mlruns && chmod -R 777 mlruns
           mkdir -p data && chmod -R 777 data
+          mkdir -p artifacts && chmod -R 777 artifacts
 
       - name: Build containers
         run: docker compose build
