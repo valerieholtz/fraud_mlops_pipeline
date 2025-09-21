@@ -2,8 +2,8 @@ name: Fraud Detection MLOps
 
 on:
   schedule:
-    - cron: "0 0 1 * *"
-  workflow_dispatch:
+    - cron: "0 0 1 * *"   # retrain on the 1st of each month
+  workflow_dispatch:       # allow manual trigger for testing
 
 jobs:
   train-promote:
@@ -16,18 +16,25 @@ jobs:
       - name: Set up Docker
         uses: docker/setup-buildx-action@v3
 
+      # Ensure .env exists (fallback to .env.example if missing)
       - name: Prepare environment file
         run: |
           if [ ! -f .env ]; then
+            echo "No .env found, copying from .env.example"
             cp .env.example .env
           fi
+          cat .env
 
-      - name: Prepare mlruns folder
-        run: mkdir -p mlruns && chmod -R 777 mlruns
+      # Make sure mlruns and data directories exist & are writable
+      - name: Prepare folders
+        run: |
+          mkdir -p mlruns && chmod -R 777 mlruns
+          mkdir -p data && chmod -R 777 data
 
       - name: Build containers
         run: docker compose build
 
+      # Initialize the SQLite database from CSV
       - name: Initialize fraud.db
         run: docker compose run --rm trainer python data/init_db.py
 
