@@ -39,15 +39,24 @@ jobs:
             echo " Month $month"
             echo "======================"
 
-            # retrain on drifted dataset
             docker compose run --rm trainer python training/train_model.py \
               --data-file data/fraud_month_${month}.csv
 
-            # promote new model if better
             docker compose run --rm promote
 
             echo " Month $month retrain + promotion complete"
           done
+
+  validate-api:
+    runs-on: self-hosted
+    needs: simulate-year   # runs only after training is done
+    env:
+      API_KEY: ${{ secrets.API_KEY }}
+      MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+      PORT: ${{ secrets.PORT }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Ensure API is stopped
         run: |
@@ -57,7 +66,7 @@ jobs:
       - name: Start API
         run: |
           docker compose up -d api
-          echo " Waiting for API startup..."
+          echo "⏳ Waiting for API startup..."
           sleep 20
 
       - name: Validate API with health check
@@ -76,4 +85,3 @@ jobs:
           echo "Response: $RESPONSE"
           echo "$RESPONSE" | grep -q "prediction"
           echo " API prediction check passed"
-
