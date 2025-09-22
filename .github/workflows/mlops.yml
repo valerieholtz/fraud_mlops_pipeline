@@ -81,24 +81,23 @@ jobs:
           cp -r _ci_download/mlruns/* mlruns/
           chmod -R 777 mlruns
 
-      #  Create dummy .env in repo root so Docker Compose stops failing
-      - name: Create dummy .env to satisfy Docker Compose
+      #  Write proper .env for Docker Compose
+      - name: Write .env for Docker Compose
         run: |
-          echo "# dummy .env for docker compose" > $GITHUB_WORKSPACE/.env
-          ls -la $GITHUB_WORKSPACE
+          echo "API_KEY=$API_KEY" > .env
+          echo "MLFLOW_TRACKING_URI=$MLFLOW_TRACKING_URI" >> .env
+          echo "PORT=$PORT" >> .env
+          echo ".env created for Docker Compose:"
+          cat .env
 
       # === Restart API and validate ===
       - name: Restart API
-        working-directory: ${{ github.workspace }}
         run: |
-          API_KEY=$API_KEY MLFLOW_TRACKING_URI=$MLFLOW_TRACKING_URI PORT=$PORT \
           docker compose down api || true
-          API_KEY=$API_KEY MLFLOW_TRACKING_URI=$MLFLOW_TRACKING_URI PORT=$PORT \
           docker compose up -d api
-          echo "API restarted with secrets from GitHub Actions."
+          echo "API restarted with .env"
 
       - name: Validate API with health check
-        working-directory: ${{ github.workspace }}
         run: |
           echo "Waiting for API to start..."
           sleep 10
@@ -108,7 +107,6 @@ jobs:
           echo " API health check passed."
 
       - name: Validate API with sample prediction
-        working-directory: ${{ github.workspace }}
         run: |
           echo "Sending sample prediction request..."
           RESPONSE=$(curl -s -X POST "http://localhost:${PORT}/predict" \
