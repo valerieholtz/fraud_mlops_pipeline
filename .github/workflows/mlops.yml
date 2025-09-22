@@ -49,7 +49,12 @@ jobs:
             echo " Month $month retrain + promotion complete"
           done
 
-      - name: Restart API
+      - name: Ensure API is stopped
+        run: |
+          docker compose down api || true
+          docker compose rm -f api || true
+
+      - name: Start API
         run: |
           docker compose up -d api
           echo " Waiting for API startup..."
@@ -71,3 +76,4 @@ jobs:
           echo "Response: $RESPONSE"
           echo "$RESPONSE" | grep -q "prediction"
           echo " API prediction check passed"
+
