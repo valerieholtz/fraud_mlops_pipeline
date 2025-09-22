@@ -114,5 +114,5 @@ jobs:
             -H "x-api-key: $API_KEY" \
             -d '{"amount": 100.0, "step": 50, "TRANSFER": 1, "PAYMENT": 0, "CASH_OUT": 0, "DEBIT": 0}')
           echo "Response: $RESPONSE"
-          echo "$RESPONSE" | grep -q "fraud_probability"
+          echo "$RESPONSE" | grep -q "prediction"
           echo " API prediction check passed."
