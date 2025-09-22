@@ -61,7 +61,9 @@ jobs:
     runs-on: self-hosted   #  must run on your local runner
     needs: train-promote   # waits until training+promotion finished
     env:
-      API_KEY: ${{ secrets.API_KEY }}   #  also inject secret locally
+      API_KEY: ${{ secrets.API_KEY }}
+      MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+      PORT: ${{ secrets.PORT }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -79,6 +81,14 @@ jobs:
           cp -r _ci_download/mlruns/* mlruns/
           chmod -R 777 mlruns
 
+      - name: Write .env file from secrets
+        run: |
+          echo "API_KEY=$API_KEY" > .env
+          echo "MLFLOW_TRACKING_URI=$MLFLOW_TRACKING_URI" >> .env
+          echo "PORT=$PORT" >> .env
+          echo ".env file created:"
+          cat .env
+
       # === Restart API and validate ===
       - name: Restart API (self-hosted only)
         if: runner.environment == 'self-hosted'
@@ -94,14 +104,14 @@ jobs:
           sleep 10
           curl -s -o /dev/null -w "%{http_code}" \
             -H "x-api-key: $API_KEY" \
-            http://localhost:8000/health | grep 200
+            http://localhost:${PORT}/health | grep 200
           echo " API health check passed."
 
       - name: Validate API with sample prediction
         if: runner.environment == 'self-hosted'
         run: |
           echo "Sending sample prediction request..."
-          RESPONSE=$(curl -s -X POST "http://localhost:8000/predict" \
+          RESPONSE=$(curl -s -X POST "http://localhost:${PORT}/predict" \
             -H "Content-Type: application/json" \
             -H "x-api-key: $API_KEY" \
             -d '{"amount": 100.0, "step": 50, "TRANSFER": 1, "PAYMENT": 0, "CASH_OUT": 0, "DEBIT": 0}')
