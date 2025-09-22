@@ -159,6 +159,44 @@ make logs      # tail logs
 make train     # run training
 make promote   # run promotion
 
+## 🚀 Setting Up and Using the Fraud Detection MLOps Pipeline
+
+This project implements a complete MLOps pipeline for fraud detection using MLflow, Docker Compose, and GitHub Actions. The pipeline consists of two jobs: **train-promote** (model training, artifact logging, and promotion) and **deploy-local** (local deployment and API validation).  
+
+### Setup
+1. Clone the repository and create a `.env` file (you can start from `.env.example`).
+2. Make sure Docker is installed and running.
+3. Register your secrets (`API_KEY`, `MLFLOW_TRACKING_URI`, `PORT`) in GitHub → *Settings* → *Secrets and variables* → *Actions*.
+4. Configure a self-hosted GitHub Actions runner on your local machine.
+
+### Usage
+- The pipeline runs automatically every month or on manual trigger via GitHub Actions.
+- After training, the latest Production model is deployed locally via Docker Compose.
+- The API becomes available at:  
+http://localhost:8000
+
+csharp
+Code kopieren
+with interactive docs at:  
+http://localhost:8000/docs
+
+makefile
+Code kopieren
+
+### Testing Predictions
+Send authenticated POST requests to `/predict`:
+```bash
+curl -X POST "http://localhost:8000/predict" \
+-H "Content-Type: application/json" \
+-H "x-api-key: <your_api_key>" \
+-d '{"amount": 5000.0, "step": 120, "TRANSFER": 1, "PAYMENT": 0, "CASH_OUT": 0, "DEBIT": 0}'
+The API will return a JSON response:
+
+json
+Code kopieren
+{"prediction": 0}
+This ensures that every retrained model is automatically deployed, validated, and ready for real-world fraud detection scenarios.
+
 🛠️ Next Steps
 
 Monitoring: Add Prometheus + Grafana to monitor API latency & drift
