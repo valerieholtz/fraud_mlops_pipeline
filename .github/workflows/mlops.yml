@@ -74,14 +74,7 @@ jobs:
           name: training-artifacts
           path: ./_ci_download
 
-      - name: Replace local mlruns with promoted registry
-        run: |
-          mkdir -p mlruns
-          rm -rf mlruns/*
-          cp -r _ci_download/mlruns/* mlruns/
-          chmod -R 777 mlruns
-
-      #  Create .env BEFORE restarting API
+      #  Create .env BEFORE any docker compose command
       - name: Write .env file from secrets
         run: |
           echo "API_KEY=$API_KEY" > .env
@@ -89,6 +82,13 @@ jobs:
           echo "PORT=$PORT" >> .env
           echo ".env file created:"
           cat .env
+
+      - name: Replace local mlruns with promoted registry
+        run: |
+          mkdir -p mlruns
+          rm -rf mlruns/*
+          cp -r _ci_download/mlruns/* mlruns/
+          chmod -R 777 mlruns
 
       # === Restart API and validate ===
       - name: Restart API
