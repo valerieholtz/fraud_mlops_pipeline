@@ -91,15 +91,13 @@ jobs:
           cat .env
 
       # === Restart API and validate ===
-      - name: Restart API (self-hosted only)
-        if: runner.environment == 'self-hosted'
+      - name: Restart API
         run: |
           docker compose down api || true
           docker compose up -d api
           echo "API restarted."
 
       - name: Validate API with health check
-        if: runner.environment == 'self-hosted'
         run: |
           echo "Waiting for API to start..."
           sleep 10
@@ -109,7 +107,6 @@ jobs:
           echo " API health check passed."
 
       - name: Validate API with sample prediction
-        if: runner.environment == 'self-hosted'
         run: |
           echo "Sending sample prediction request..."
           RESPONSE=$(curl -s -X POST "http://localhost:${PORT}/predict" \
