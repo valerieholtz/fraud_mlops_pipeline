@@ -112,9 +112,18 @@ def train_and_log(X, y, feature_names, experiment_name="fraud_detection"):
 
         # Log metrics
         mlflow.log_metric("roc_auc", auc)
-        mlflow.log_metric("recall_fraud", report["1"]["recall"])
-        mlflow.log_metric("precision_fraud", report["1"]["precision"])
-        mlflow.log_metric("f1_fraud", report["1"]["f1-score"])
+
+        #  Handle case: fraud class may be missing from classification_report
+        if "1" in report:
+            mlflow.log_metric("recall_fraud", report["1"]["recall"])
+            mlflow.log_metric("precision_fraud", report["1"]["precision"])
+            mlflow.log_metric("f1_fraud", report["1"]["f1-score"])
+        else:
+            print(" Fraud class not present in y_test or y_pred, logging defaults (0.0)")
+            mlflow.log_metric("recall_fraud", 0.0)
+            mlflow.log_metric("precision_fraud", 0.0)
+            mlflow.log_metric("f1_fraud", 0.0)
+
 
         # Log artifacts
         os.makedirs(ARTIFACTS_DIR, exist_ok=True)
