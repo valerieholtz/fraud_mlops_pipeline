@@ -1,65 +1,11 @@
-name: Fraud Detection MLOps
+name: Fraud Detection MLOps (Testing Branch)
 
 on:
-  schedule:
-    - cron: "0 0 1 * *"   # retrain on the 1st of each month
-  workflow_dispatch:       # allow manual trigger for testing
+  workflow_dispatch:  # manual trigger for demo
 
 jobs:
-  train-promote:
-    runs-on: ubuntu-latest
-    env:
-      API_KEY: ${{ secrets.API_KEY }}   # inject GitHub secret
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v3
-
-      # Ensure .env exists (fallback to .env.example if missing)
-      - name: Prepare environment file
-        run: |
-          if [ ! -f .env ]; then
-            echo "No .env found, copying from .env.example"
-            cp .env.example .env
-          fi
-          # sync secret into .env for consistency
-          grep -q '^API_KEY=' .env && sed -i "s/^API_KEY=.*/API_KEY=$API_KEY/" .env || echo "API_KEY=$API_KEY" >> .env
-          cat .env
-
-      # Make sure mlruns, data, and artifacts directories exist & are writable
-      - name: Prepare folders
-        run: |
-          mkdir -p mlruns && chmod -R 777 mlruns
-          mkdir -p data && chmod -R 777 data
-          mkdir -p artifacts && chmod -R 777 artifacts
-
-      - name: Build containers
-        run: docker compose build
-
-      # Initialize the SQLite database from CSV
-      - name: Initialize fraud.db
-        run: docker compose run --rm trainer python data/init_db.py
-
-      - name: Run training
-        run: docker compose run --rm trainer
-
-      - name: Run promotion
-        run: docker compose run --rm promote
-
-      - name: Upload training artifacts (mlruns + plots + DB)
-        uses: actions/upload-artifact@v4
-        with:
-          name: training-artifacts
-          path: |
-            mlruns/
-            artifacts/
-            data/fraud.db
-
-  deploy-local:
-    runs-on: self-hosted   # must run on your local runner
-    needs: train-promote   # waits until training+promotion finished
+  simulate-year:
+    runs-on: self-hosted   # your local runner
     env:
       API_KEY: ${{ secrets.API_KEY }}
       MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
@@ -68,51 +14,53 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download training artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: training-artifacts
-          path: ./_ci_download
-
-      - name: Replace local mlruns with promoted registry
-        run: |
-          mkdir -p mlruns
-          rm -rf mlruns/*
-          cp -r _ci_download/mlruns/* mlruns/
-          chmod -R 777 mlruns
-
-      #  Write proper .env for Docker Compose
       - name: Write .env for Docker Compose
         run: |
           echo "API_KEY=$API_KEY" > .env
           echo "MLFLOW_TRACKING_URI=$MLFLOW_TRACKING_URI" >> .env
           echo "PORT=$PORT" >> .env
-          echo ".env created for Docker Compose:"
           cat .env
 
-      # === Restart API and validate ===
-      - name: Restart API
-        run: |
-          docker compose down api || true
-          docker compose up -d api
-          echo "API restarted with .env"
+      - name: Build containers
+        run: docker compose build
 
-      - name: Validate API with health check
+      - name: Prepare folders
         run: |
-          echo "Waiting for API to start..."
-          sleep 10
-          curl -s -o /dev/null -w "%{http_code}" \
-            -H "x-api-key: $API_KEY" \
-            http://localhost:${PORT}/health | grep 200
-          echo " API health check passed."
+          mkdir -p mlruns artifacts data
+          chmod -R 777 mlruns artifacts data
 
-      - name: Validate API with sample prediction
+      - name: Generate monthly drifted datasets
+        run: docker compose run --rm trainer python data/generate_monthly_data.py
+
+      - name: Simulate one year of retraining with drift
         run: |
-          echo "Sending sample prediction request..."
-          RESPONSE=$(curl -s -X POST "http://localhost:${PORT}/predict" \
-            -H "Content-Type: application/json" \
-            -H "x-api-key: $API_KEY" \
-            -d '{"amount": 100.0, "step": 50, "TRANSFER": 1, "PAYMENT": 0, "CASH_OUT": 0, "DEBIT": 0}')
-          echo "Response: $RESPONSE"
-          echo "$RESPONSE" | grep -q "prediction"
-          echo " API prediction check passed."
+          for month in {1..12}; do
+            echo "======================"
+            echo " Month $month"
+            echo "======================"
+
+            # retrain on drifted dataset
+            docker compose run --rm trainer python training/train_model.py \
+              --data-file data/fraud_month_${month}.csv
+
+            # promote new model if better
+            docker compose run --rm promote
+
+            # restart API
+            docker compose up -d api
+            sleep 8
+
+            # check health
+            curl -s -o /dev/null -w "%{http_code}" \
+              -H "x-api-key: $API_KEY" \
+              http://localhost:${PORT}/health | grep 200
+
+            # test prediction
+            RESPONSE=$(curl -s -X POST "http://localhost:${PORT}/predict" \
+              -H "Content-Type: application/json" \
+              -H "x-api-key: $API_KEY" \
+              -d '{"amount": 500, "step": 100, "TRANSFER": 1, "PAYMENT": 0, "CASH_OUT": 0, "DEBIT": 0}')
+            echo "Prediction: $RESPONSE"
+
+            echo " Month $month retrain + API validation complete"
+          done
