@@ -21,6 +21,11 @@ jobs:
           echo "PORT=$PORT" >> .env
           cat .env
 
+      - name: Clean up any stale containers
+        run: |
+          docker compose down || true
+          docker compose rm -f || true
+
       - name: Build containers
         run: docker compose build
 
@@ -58,6 +63,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Write .env for Docker Compose
+        run: |
+          echo "API_KEY=$API_KEY" > .env
+          echo "MLFLOW_TRACKING_URI=$MLFLOW_TRACKING_URI" >> .env
+          echo "PORT=$PORT" >> .env
+          cat .env
+
       - name: Ensure API is stopped
         run: |
           docker compose down api || true
@@ -66,7 +78,7 @@ jobs:
       - name: Start API
         run: |
           docker compose up -d api
-          echo "⏳ Waiting for API startup..."
+          echo " Waiting for API startup..."
           sleep 20
 
       - name: Validate API with health check
