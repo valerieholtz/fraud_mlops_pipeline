@@ -46,21 +46,28 @@ jobs:
             # promote new model if better
             docker compose run --rm promote
 
-            # restart API
-            docker compose up -d api
-            sleep 8
-
-            # check health
-            curl -s -o /dev/null -w "%{http_code}" \
-              -H "x-api-key: $API_KEY" \
-              http://localhost:${PORT}/health | grep 200
-
-            # test prediction
-            RESPONSE=$(curl -s -X POST "http://localhost:${PORT}/predict" \
-              -H "Content-Type: application/json" \
-              -H "x-api-key: $API_KEY" \
-              -d '{"amount": 500, "step": 100, "TRANSFER": 1, "PAYMENT": 0, "CASH_OUT": 0, "DEBIT": 0}')
-            echo "Prediction: $RESPONSE"
-
-            echo " Month $month retrain + API validation complete"
+            echo " Month $month retrain + promotion complete"
           done
+
+      - name: Restart API
+        run: |
+          docker compose up -d api
+          echo " Waiting for API startup..."
+          sleep 20
+
+      - name: Validate API with health check
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+            -H "x-api-key: $API_KEY" \
+            http://localhost:${PORT}/health | grep 200
+          echo " API health check passed"
+
+      - name: Validate API with sample prediction
+        run: |
+          RESPONSE=$(curl -s -X POST "http://localhost:${PORT}/predict" \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: $API_KEY" \
+            -d '{"amount": 500, "step": 100, "TRANSFER": 1, "PAYMENT": 0, "CASH_OUT": 0, "DEBIT": 0}')
+          echo "Response: $RESPONSE"
+          echo "$RESPONSE" | grep -q "prediction"
+          echo " API prediction check passed"
