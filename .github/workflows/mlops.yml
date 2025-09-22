@@ -74,20 +74,6 @@ jobs:
           name: training-artifacts
           path: ./_ci_download
 
-      #  Create .env BEFORE Docker Compose
-      - name: Write .env file from secrets
-        run: |
-          echo "API_KEY=$API_KEY" > .env
-          echo "MLFLOW_TRACKING_URI=$MLFLOW_TRACKING_URI" >> .env
-          echo "PORT=$PORT" >> .env
-
-      - name: Debug: show current folder and .env
-        run: |
-          echo "Current working directory: $(pwd)"
-          ls -la
-          echo "Contents of .env:"
-          cat .env
-
       - name: Replace local mlruns with promoted registry
         run: |
           mkdir -p mlruns
@@ -95,12 +81,14 @@ jobs:
           cp -r _ci_download/mlruns/* mlruns/
           chmod -R 777 mlruns
 
-      # === Restart API and validate ===
+      # === Restart API and validate (no .env file needed) ===
       - name: Restart API
         run: |
-          docker compose --env-file .env down api || true
-          docker compose --env-file .env up -d api
-          echo "API restarted."
+          API_KEY=$API_KEY MLFLOW_TRACKING_URI=$MLFLOW_TRACKING_URI PORT=$PORT \
+          docker compose down api || true
+          API_KEY=$API_KEY MLFLOW_TRACKING_URI=$MLFLOW_TRACKING_URI PORT=$PORT \
+          docker compose up -d api
+          echo "API restarted with secrets from GitHub Actions."
 
       - name: Validate API with health check
         run: |
