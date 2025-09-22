@@ -27,7 +27,7 @@ MODEL_NAME = "fraud_model"
 
 # NEW: function to load from CSV
 def load_data_from_csv(path: str) -> pd.DataFrame:
-    print(f"📂 Loading data from CSV: {path}")
+    print(f" Loading data from CSV: {path}")
     return pd.read_csv(path)
 
 
@@ -60,8 +60,8 @@ def preprocess(df: pd.DataFrame):
                    pd.DataFrame(type_encoded, columns=type_cols)], axis=1)
 
     # Scale amount
-    scaler = MinMaxScaler()
-    X["amount"] = scaler.fit_transform(X[["amount"]])
+    #scaler = MinMaxScaler()
+    #X["amount"] = scaler.fit_transform(X[["amount"]])
 
     return X, y, list(X.columns)
 
@@ -70,8 +70,15 @@ def train_and_log(X, y, feature_names, experiment_name="fraud_detection"):
     mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "file:///workspace/mlruns"))
     mlflow.set_experiment(experiment_name)
 
+    #  Prevent stratification errors when one class has too few samples
+    if y.value_counts().min() < 2:
+        print(" Too few samples in one class, falling back to non-stratified split")
+        stratify = None
+    else:
+        stratify = y
+
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, stratify=y, random_state=42
+        X, y, test_size=0.2, random_state=42, stratify=stratify
     )
 
     scale_pos_weight = (y_train == 0).sum() / (y_train == 1).sum()
