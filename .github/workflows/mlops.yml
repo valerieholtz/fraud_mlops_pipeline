@@ -81,13 +81,12 @@ jobs:
           cp -r _ci_download/mlruns/* mlruns/
           chmod -R 777 mlruns
 
-      # === Restart API and validate (no .env file needed) ===
+      # === Restart API and validate ===
       - name: Restart API
         run: |
+          docker compose --env-file /dev/null down api || true
           API_KEY=$API_KEY MLFLOW_TRACKING_URI=$MLFLOW_TRACKING_URI PORT=$PORT \
-          docker compose down api || true
-          API_KEY=$API_KEY MLFLOW_TRACKING_URI=$MLFLOW_TRACKING_URI PORT=$PORT \
-          docker compose up -d api
+          docker compose --env-file /dev/null up -d api
           echo "API restarted with secrets from GitHub Actions."
 
       - name: Validate API with health check
