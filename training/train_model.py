@@ -100,7 +100,13 @@ def train_and_log(X, y, feature_names, experiment_name="fraud_detection"):
         y_pred = model.predict(X_test)
         y_probs = model.predict_proba(X_test)[:, 1]
 
-        auc = roc_auc_score(y_test, y_probs)
+        #  Handle edge case: ROC AUC not defined if y_test has only one class
+        try:
+            auc = roc_auc_score(y_test, y_probs)
+        except ValueError:
+            print(" Only one class present in y_test, setting AUC=0.5 as fallback")
+            auc = 0.5
+            
         report = classification_report(y_test, y_pred, output_dict=True)
         cm = confusion_matrix(y_test, y_pred)
 
