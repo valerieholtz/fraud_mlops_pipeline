@@ -9,7 +9,7 @@ jobs:
   train-promote:
     runs-on: ubuntu-latest
     env:
-      API_KEY: ${{ secrets.API_KEY }}   #  inject GitHub secret
+      API_KEY: ${{ secrets.API_KEY }}   # inject GitHub secret
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -58,7 +58,7 @@ jobs:
             data/fraud.db
 
   deploy-local:
-    runs-on: self-hosted   #  must run on your local runner
+    runs-on: self-hosted   # must run on your local runner
     needs: train-promote   # waits until training+promotion finished
     env:
       API_KEY: ${{ secrets.API_KEY }}
@@ -81,6 +81,7 @@ jobs:
           cp -r _ci_download/mlruns/* mlruns/
           chmod -R 777 mlruns
 
+      #  Create .env BEFORE restarting API
       - name: Write .env file from secrets
         run: |
           echo "API_KEY=$API_KEY" > .env
