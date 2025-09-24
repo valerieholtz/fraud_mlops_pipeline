@@ -80,7 +80,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: mlruns
-          path: mlruns/
+          path: ./mlruns   #  must match docker-compose.yml volume
+
+      - name: Debug mlruns contents
+        run: |
+          echo "=== Debug: contents of ./mlruns ==="
+          ls -R ./mlruns || true
 
       - name: Write .env for Docker Compose
         run: |
