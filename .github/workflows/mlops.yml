@@ -118,10 +118,9 @@ jobs:
               -d '{
                 "step": 100,
                 "amount": 500,
-                "type_CASH-IN": 0,
-                "type_CASH-OUT": 1,
+                "type_CASH_IN": 0,
+                "type_CASH_OUT": 1,
                 "type_DEBIT": 0,
-                "type_PAYMENT": 0,
                 "type_TRANSFER": 0
               }' || true)
             echo "Attempt $i: $RESPONSE"
