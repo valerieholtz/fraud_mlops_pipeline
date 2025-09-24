@@ -52,7 +52,7 @@ jobs:
             echo " Month $month retrain + promotion complete"
           done
 
-  validate-api:
+    validate-api:
     runs-on: self-hosted
     needs: simulate-year   # runs only after training is done
     env:
@@ -78,15 +78,24 @@ jobs:
       - name: Start API
         run: |
           docker compose up -d api
-          echo " Waiting for API startup..."
-          sleep 20
+          echo "Waiting for API startup..."
 
-      - name: Validate API with health check
+      - name: Wait for API health
         run: |
-          curl -s -o /dev/null -w "%{http_code}" \
-            -H "x-api-key: $API_KEY" \
-            http://localhost:${PORT}/health | grep 200
-          echo " API health check passed"
+          for i in {1..10}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              -H "x-api-key: $API_KEY" \
+              http://localhost:${PORT}/health || true)
+            if [ "$STATUS" = "200" ]; then
+              echo " API is up and healthy"
+              exit 0
+            fi
+            echo "⏳ Waiting for API... ($i/10)"
+            sleep 5
+          done
+          echo " API did not start in time"
+          docker compose logs api
+          exit 1
 
       - name: Validate API with sample prediction
         run: |
@@ -97,3 +106,4 @@ jobs:
           echo "Response: $RESPONSE"
           echo "$RESPONSE" | grep -q "prediction"
           echo " API prediction check passed"
+
