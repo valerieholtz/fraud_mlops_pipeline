@@ -41,6 +41,7 @@ EXCLUDED_COLUMNS = [
     "nameOrig", "nameDest",
     "oldbalanceOrg", "newbalanceOrig",
     "oldbalanceDest", "newbalanceDest",
+    "isFlaggedFraud"
 ]
 TARGET_COLUMN = "isFraud"
 EXPERIMENT_NAME = "fraud-detection-v1.4"
