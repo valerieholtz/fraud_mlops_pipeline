@@ -147,7 +147,7 @@ def train_and_log(X, y, feature_names, experiment_name="fraud_detection"):
 
 def main():
     parser = argparse.ArgumentParser()  #  NEW
-    parser.add_argument("--data-file", type=str, help="Path to CSV with monthly data")  # ✨ NEW
+    parser.add_argument("--data-file", type=str, help="Path to CSV with monthly data")  #  NEW
     args = parser.parse_args()  #  NEW
 
     #  NEW: decide source
