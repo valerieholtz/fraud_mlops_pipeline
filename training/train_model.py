@@ -2,20 +2,20 @@
 Train fraud detection model, log metrics & artifacts to MLflow,
 and auto-promote the first model to Production if none exists yet.
 
-Extended for testing monthly retraining with simulated data drift::
+Extended for testing monthly retraining with simulated data drift:
 - Added argparse with --data-file argument
 - Added load_data_from_csv()
 - Logic to choose between CSV or SQLite input
 """
 
 import os
-import argparse   # NEW: to parse --data-file argument
+import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
 import sqlite3
 
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder
 from sklearn.metrics import classification_report, roc_auc_score, confusion_matrix
 import xgboost as xgb
 import mlflow
@@ -25,7 +25,7 @@ ARTIFACTS_DIR = "artifacts"
 MODEL_NAME = "fraud_model"
 
 
-# NEW: function to load from CSV
+# === Loaders ===
 def load_data_from_csv(path: str) -> pd.DataFrame:
     print(f" Loading data from CSV: {path}")
     return pd.read_csv(path)
@@ -39,6 +39,7 @@ def load_data_from_db(path: str = "data/fraud.db") -> pd.DataFrame:
     return df
 
 
+# === Preprocessing ===
 def preprocess(df: pd.DataFrame):
     # Drop leakage columns if present
     drop_cols = [
@@ -51,26 +52,29 @@ def preprocess(df: pd.DataFrame):
     X = df.drop(columns=["isFraud", "isFlaggedFraud"])
     y = df["isFraud"]
 
-    # One-hot encode type
-    encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
+    # One-hot encode type with fixed categories to avoid feature mismatch
+    all_types = ["CASH_IN", "CASH_OUT", "DEBIT", "PAYMENT", "TRANSFER"]
+
+    encoder = OneHotEncoder(
+        categories=[all_types],   # enforce consistent categories
+        handle_unknown="ignore",
+        sparse_output=False
+    )
     type_encoded = encoder.fit_transform(X[["type"]])
     type_cols = encoder.get_feature_names_out(["type"])
     X = X.drop(columns=["type"])
     X = pd.concat([X.reset_index(drop=True),
                    pd.DataFrame(type_encoded, columns=type_cols)], axis=1)
 
-    # Scale amount
-    #scaler = MinMaxScaler()
-    #X["amount"] = scaler.fit_transform(X[["amount"]])
-
     return X, y, list(X.columns)
 
 
+# === Training + Logging ===
 def train_and_log(X, y, feature_names, experiment_name="fraud_detection"):
     mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "file:///workspace/mlruns"))
     mlflow.set_experiment(experiment_name)
 
-    #  Prevent stratification errors when one class has too few samples
+    # Prevent stratification errors when one class has too few samples
     if y.value_counts().min() < 2:
         print(" Too few samples in one class, falling back to non-stratified split")
         stratify = None
@@ -100,20 +104,19 @@ def train_and_log(X, y, feature_names, experiment_name="fraud_detection"):
         y_pred = model.predict(X_test)
         y_probs = model.predict_proba(X_test)[:, 1]
 
-        #  Handle edge case: ROC AUC not defined if y_test has only one class
+        # Handle edge case: ROC AUC not defined if y_test has only one class
         try:
             auc = roc_auc_score(y_test, y_probs)
         except ValueError:
             print(" Only one class present in y_test, setting AUC=0.5 as fallback")
             auc = 0.5
-            
+
         report = classification_report(y_test, y_pred, output_dict=True)
         cm = confusion_matrix(y_test, y_pred)
 
         # Log metrics
         mlflow.log_metric("roc_auc", auc)
 
-        #  Handle case: fraud class may be missing from classification_report
         if "1" in report:
             mlflow.log_metric("recall_fraud", report["1"]["recall"])
             mlflow.log_metric("precision_fraud", report["1"]["precision"])
@@ -123,7 +126,6 @@ def train_and_log(X, y, feature_names, experiment_name="fraud_detection"):
             mlflow.log_metric("recall_fraud", 0.0)
             mlflow.log_metric("precision_fraud", 0.0)
             mlflow.log_metric("f1_fraud", 0.0)
-
 
         # Log artifacts
         os.makedirs(ARTIFACTS_DIR, exist_ok=True)
@@ -145,12 +147,12 @@ def train_and_log(X, y, feature_names, experiment_name="fraud_detection"):
         client.transition_model_version_stage(MODEL_NAME, latest.version, "Production")
 
 
+# === Main ===
 def main():
-    parser = argparse.ArgumentParser()  #  NEW
-    parser.add_argument("--data-file", type=str, help="Path to CSV with monthly data")  #  NEW
-    args = parser.parse_args()  #  NEW
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data-file", type=str, help="Path to CSV with monthly data")
+    args = parser.parse_args()
 
-    #  NEW: decide source
     if args.data_file:
         df = load_data_from_csv(args.data_file)
     else:
