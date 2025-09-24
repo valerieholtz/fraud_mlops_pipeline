@@ -80,7 +80,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: mlruns
-          path: ./mlruns   #  must match docker-compose.yml volume
+          path: ./mlruns   # must match docker-compose.yml volume
 
       - name: Debug mlruns contents
         run: |
@@ -104,29 +104,20 @@ jobs:
           docker compose up -d api
           echo "Waiting for API startup..."
 
-      - name: Wait for API health
+      - name: Wait for API prediction readiness
         run: |
-          for i in {1..10}; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          for i in {1..24}; do  # retry up to 2 minutes
+            RESPONSE=$(curl -s -X POST "http://localhost:${PORT}/predict" \
+              -H "Content-Type: application/json" \
               -H "x-api-key: $API_KEY" \
-              http://localhost:${PORT}/health || true)
-            if [ "$STATUS" = "200" ]; then
-              echo " API is up and healthy"
+              -d '{"amount": 500, "step": 100, "TRANSFER": 1, "PAYMENT": 0, "CASH_OUT": 0, "DEBIT": 0}' || true)
+            echo "Attempt $i: $RESPONSE"
+            if echo "$RESPONSE" | grep -q "prediction"; then
+              echo " API is ready and returned a prediction"
               exit 0
             fi
-            echo " Waiting for API... ($i/10)"
             sleep 5
           done
-          echo " API did not start in time"
+          echo " API did not return prediction in time"
           docker compose logs api
           exit 1
-
-      - name: Validate API with sample prediction
-        run: |
-          RESPONSE=$(curl -s -X POST "http://localhost:${PORT}/predict" \
-            -H "Content-Type: application/json" \
-            -H "x-api-key: $API_KEY" \
-            -d '{"amount": 500, "step": 100, "TRANSFER": 1, "PAYMENT": 0, "CASH_OUT": 0, "DEBIT": 0}')
-          echo "Response: $RESPONSE"
-          echo "$RESPONSE" | grep -q "prediction"
-          echo " API prediction check passed"
