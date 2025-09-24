@@ -110,7 +110,15 @@ jobs:
             RESPONSE=$(curl -s -X POST "http://localhost:${PORT}/predict" \
               -H "Content-Type: application/json" \
               -H "x-api-key: $API_KEY" \
-              -d '{"amount": 500, "step": 100, "TRANSFER": 1, "PAYMENT": 0, "CASH_OUT": 0, "DEBIT": 0}' || true)
+              -d '{
+                "step": 100,
+                "amount": 500,
+                "type_CASH-IN": 0,
+                "type_CASH-OUT": 1,
+                "type_DEBIT": 0,
+                "type_PAYMENT": 0,
+                "type_TRANSFER": 0
+              }' || true)
             echo "Attempt $i: $RESPONSE"
             if echo "$RESPONSE" | grep -q "prediction"; then
               echo " API is ready and returned a prediction"
