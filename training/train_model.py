@@ -40,7 +40,7 @@ mlflow.sklearn.autolog(disable=True)
 EXCLUDED_COLUMNS = [
     "nameOrig", "nameDest",
     "oldbalanceOrg", "newbalanceOrig",
-    "oldbalanceDest", "newbalanceDest",
+    "oldbalanceDest", "newbalanceDest", "isFlaggedFraud"
 ]
 TARGET_COLUMN = "isFraud"
 EXPERIMENT_NAME = "fraud-detection-v1.4"
@@ -79,8 +79,8 @@ df = pd.concat(
 )
 
 # === Scale transaction amount ===
-scaler = MinMaxScaler()
-df["amount"] = scaler.fit_transform(df[["amount"]])
+#scaler = MinMaxScaler()
+#df["amount"] = scaler.fit_transform(df[["amount"]])
 
 # === Train/test split ===
 X = df.drop(columns=[TARGET_COLUMN])
