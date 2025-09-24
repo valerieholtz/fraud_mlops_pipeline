@@ -35,10 +35,9 @@ def verify_api_key(x_api_key: str = Header(...)):
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
-# === Load model ===
+# === Load model ==
 MODEL_NAME = "fraud_model"
 MODEL_URI = f"models:/{MODEL_NAME}/Production"
-client = MlflowClient()
 
 def load_serving_model():
     try:
@@ -46,27 +45,11 @@ def load_serving_model():
         print(f"[INFO] Loaded model from {MODEL_URI}")
         return model
     except Exception as e:
-        print(f"[WARN] Failed to load from registry stage: {e}")
-        print("[INFO] Falling back to latest run artifact...")
-
-        experiment = client.get_experiment_by_name("fraud-detection-v1.4")
-        if not experiment:
-            raise RuntimeError("No experiment found: fraud-detection-v1.4")
-
-        runs = client.search_runs(
-            experiment_ids=[experiment.experiment_id],
-            order_by=["attributes.start_time DESC"],
-            max_results=1,
-        )
-        if not runs:
-            raise RuntimeError("No runs found to load fallback model")
-
-        run_id = runs[0].info.run_id
-        model_uri = f"runs:/{run_id}/model"
-        print(f"[INFO] Loading model directly from run {run_id}")
-        return mlflow.pyfunc.load_model(model_uri)
+        print(f"[ERROR] Failed to load Production model '{MODEL_NAME}': {e}")
+        raise RuntimeError("No Production model found in MLflow registry")
 
 model = load_serving_model()
+
 
 # === Load feature names ===
 FEATURE_FILE = os.path.join("app", "feature_names.txt")
