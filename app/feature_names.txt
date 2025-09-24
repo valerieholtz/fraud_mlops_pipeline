@@ -2,9 +2,6 @@ step
 amount
 type_CASH-IN
 type_CASH-OUT
-type_CASH-IN
-type_CASH-OUT
 type_DEBIT
-type_PAYMENT
 type_PAYMENT
 type_TRANSFER
