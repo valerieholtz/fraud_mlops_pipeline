@@ -11,7 +11,7 @@ on:
 jobs:
   simulate-year:
     if: github.event.inputs.skip_simulate != 'true'
-    runs-on: self-hosted   # local runner
+    runs-on: self-hosted
     env:
       API_KEY: ${{ secrets.API_KEY }}
       MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
@@ -58,9 +58,15 @@ jobs:
             echo " Month $month retrain + promotion complete"
           done
 
+      - name: Upload mlruns registry
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlruns
+          path: mlruns/
+
   validate-api:
     needs: [simulate-year]
-    if: always()   # allow this job to run even if simulate-year is skipped
+    if: always()
     runs-on: self-hosted
     env:
       API_KEY: ${{ secrets.API_KEY }}
@@ -69,6 +75,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Download mlruns registry
+        uses: actions/download-artifact@v4
+        with:
+          name: mlruns
+          path: mlruns/
 
       - name: Write .env for Docker Compose
         run: |
