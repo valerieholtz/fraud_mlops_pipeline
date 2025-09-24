@@ -20,6 +20,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Clean old MLflow registry
+        run: |
+          rm -rf mlruns artifacts
+          mkdir -p mlruns artifacts
+
       - name: Write .env for Docker Compose
         run: |
           echo "API_KEY=$API_KEY" > .env
