@@ -1,8 +1,6 @@
 step
 amount
-isFlaggedFraud
 type_CASH_IN
 type_CASH_OUT
 type_DEBIT
-type_PAYMENT
 type_TRANSFER
