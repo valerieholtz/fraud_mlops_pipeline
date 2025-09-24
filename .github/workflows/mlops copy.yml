@@ -1,17 +1,11 @@
 name: Fraud Detection MLOps (Testing Branch)
 
 on:
-  workflow_dispatch:
-    inputs:
-      skip_simulate:
-        description: "Skip simulate-year retraining?"
-        required: false
-        default: "false"
+  workflow_dispatch:  # manual trigger for demo
 
 jobs:
   simulate-year:
-    if: github.event.inputs.skip_simulate != 'true'
-    runs-on: self-hosted   # local runner
+    runs-on: self-hosted   # your local runner
     env:
       API_KEY: ${{ secrets.API_KEY }}
       MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
@@ -58,10 +52,9 @@ jobs:
             echo " Month $month retrain + promotion complete"
           done
 
-  validate-api:
-    needs: [simulate-year]
-    if: always()   # allow this job to run even if simulate-year is skipped
+    validate-api:
     runs-on: self-hosted
+    needs: simulate-year   # runs only after training is done
     env:
       API_KEY: ${{ secrets.API_KEY }}
       MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
@@ -97,7 +90,7 @@ jobs:
               echo " API is up and healthy"
               exit 0
             fi
-            echo " Waiting for API... ($i/10)"
+            echo "⏳ Waiting for API... ($i/10)"
             sleep 5
           done
           echo " API did not start in time"
@@ -113,3 +106,4 @@ jobs:
           echo "Response: $RESPONSE"
           echo "$RESPONSE" | grep -q "prediction"
           echo " API prediction check passed"
+
