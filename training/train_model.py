@@ -11,7 +11,7 @@ import sqlite3
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder
 from sklearn.metrics import classification_report, roc_auc_score, confusion_matrix
 import xgboost as xgb
 import mlflow
@@ -71,17 +71,22 @@ plt.savefig(plot_path)
 plt.close()
 
 # === One-hot encode transaction type ===
-encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
+# Explicitly define all categories to guarantee consistent feature names
+all_types = ["CASH_IN", "CASH_OUT", "DEBIT", "PAYMENT", "TRANSFER"]
+
+encoder = OneHotEncoder(
+    categories=[all_types],   # enforce full set of categories
+    handle_unknown="ignore",
+    sparse_output=False
+)
+
 type_encoded = encoder.fit_transform(df[["type"]])
 type_df = pd.DataFrame(type_encoded, columns=encoder.get_feature_names_out(["type"]))
+
 df = pd.concat(
     [df.drop(columns=["type"]).reset_index(drop=True), type_df.reset_index(drop=True)],
     axis=1,
 )
-
-# === Scale transaction amount ===
-#scaler = MinMaxScaler()
-#df["amount"] = scaler.fit_transform(df[["amount"]])
 
 # === Train/test split ===
 X = df.drop(columns=[TARGET_COLUMN])
