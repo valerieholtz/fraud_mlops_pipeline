@@ -100,11 +100,20 @@ jobs:
       - name: Validate API with health check
         run: |
           echo "Waiting for API to start..."
-          sleep 10
-          curl -s -o /dev/null -w "%{http_code}" \
-            -H "x-api-key: $API_KEY" \
-            http://localhost:${PORT}/health | grep 200
-          echo " API health check passed."
+          for i in {1..6}; do   # try up to 6 times (1 minute total)
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              -H "x-api-key: $API_KEY" \
+              http://localhost:${PORT}/health || true)
+            if [ "$STATUS" = "200" ]; then
+              echo "API health check passed."
+              exit 0
+            fi
+            echo "Not ready yet (status=$STATUS), retrying in 10s..."
+            sleep 10
+          done
+          echo "API failed to become healthy after 60s"
+          docker compose logs api  # <-- print logs for debugging
+          exit 1
 
       - name: Validate API with sample prediction
         run: |
