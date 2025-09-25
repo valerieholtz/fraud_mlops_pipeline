@@ -3,7 +3,7 @@ name: Fraud Detection MLOps
 on:
   schedule:
     - cron: "0 0 1 * *"   # retrain on the 1st of each month
-  workflow_dispatch:       # allow manual trigger for testing
+  workflow_dispatch:
 
 jobs:
   train-promote:
