@@ -27,7 +27,7 @@ print(f"[INFO] Using MLflow tracking URI: {tracking_uri}")
 env_path = Path(__file__).resolve().parents[1] / ".env"
 load_dotenv(dotenv_path=env_path)
 
-# === API security (single API key auth) ===
+# API security (single API key auth)
 API_KEY = os.getenv("API_KEY", "dev-key")
 print(f"[DEBUG] Loaded API_KEY = {repr(API_KEY)}")  # helps debugging
 
