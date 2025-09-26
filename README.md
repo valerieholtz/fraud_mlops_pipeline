@@ -35,7 +35,7 @@ fraud_mlops_pipeline/
 
 ---
 
-##  Features
+## 🔑 Features
 
 - SQLite for persistent fraud data (`data/fraud.db`)
 - MLflow for experiment tracking, model logging, registry, and UI
@@ -67,6 +67,21 @@ Here, the goal is to **simulate one full year of data drift and monthly retraini
 
 This branch demonstrates that the pipeline is **robust against real-world challenges** like schema drift, registry persistence, and CI/CD timing issues.  
 It validates that the fraud detection API remains accessible and up to date after every retraining cycle.  
+
+---
+
+##  Using a Self-Hosted Runner
+
+For this branch, a **self-hosted runner** can be configured to automatically deploy the latest Production model locally after retraining.  
+
+### How it works:
+1. Set up a self-hosted runner on your local machine (see [GitHub’s guide](https://docs.github.com/en/actions/hosting-your-own-runners/adding-self-hosted-runners)).  
+2. Start the runner with `./run.sh` and keep it running.  
+3. When the GitHub Actions workflow completes a retraining + promotion cycle, the workflow triggers a **deploy-local** job.  
+4. This job downloads the updated `mlruns/` artifact, replaces the local copy, and restarts the FastAPI container.  
+5. The API remains continuously reachable over REST with the latest Production model at [http://localhost:8000/docs](http://localhost:8000/docs).  
+
+This setup allows local testing of automation logic while keeping the service always available without cloud infrastructure.  
 
 ---
 
@@ -131,7 +146,7 @@ Compares new model with current Production and promotes if better.
 
 ### Test the API
 ```bash
-curl -X POST "http://127.0.0.1:8000/predict"   -H "Content-Type: application/json"   -H 'x-api-key: fdtge784h'   -d '{"amount": 0.4, "step": 50, "TRANSFER": 1, "PAYMENT": 0, "CASH_OUT": 0, "DEBIT": 0}'
+curl -X POST "http://127.0.0.1:8000/predict"   -H "Content-Type: application/json"   -H 'x-api-key: your_key'   -d '{"amount": 0.4, "step": 50, "TRANSFER": 1, "PAYMENT": 0, "CASH_OUT": 0, "DEBIT": 0}'
 ```
 
 **Expected response:**
@@ -149,7 +164,8 @@ The project includes a workflow in `.github/workflows/mlops.yml` that automates:
 - Running the promotion logic (`promote_if_better.py`)
 - Scheduling retraining automatically once per month (cron job)
 - Allowing manual retraining via the **Actions** tab in GitHub
-- (Branch-specific) Simulating one year of drifted data, retraining monthly, and validating API health
+- (Branch-specific) Simulating one year of drifted data, retraining monthly, validating API health
+- (Optional) Deploying locally with a self-hosted runner to keep the API updated automatically
 
 This replaces the need for a heavy local Jenkins setup and runs entirely in GitHub’s cloud infrastructure.
 
