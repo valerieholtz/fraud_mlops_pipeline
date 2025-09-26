@@ -100,7 +100,7 @@ flowchart LR
 
 2. **Create `.env` file (based on `.env.example`)**
    ```env
-   API_KEY=fdtge784h
+   API_KEY=...
    PORT=8000
    MLFLOW_TRACKING_URI=file:///workspace/mlruns
    ```
@@ -135,7 +135,7 @@ Compares new model with current Production and promotes if better.
 
 ### Test the API
 ```bash
-curl -X POST "http://127.0.0.1:8000/predict"   -H "Content-Type: application/json"   -H 'x-api-key: fdtge784h'   -d '{"amount": 0.4, "step": 50, "TRANSFER": 1, "PAYMENT": 0, "CASH_OUT": 0, "DEBIT": 0}'
+curl -X POST "http://127.0.0.1:8000/predict"   -H "Content-Type: application/json"   -H 'x-api-key: your_key'   -d '{"amount": 0.4, "step": 50, "TRANSFER": 1, "PAYMENT": 0, "CASH_OUT": 0, "DEBIT": 0}'
 ```
 
 **Expected response:**
