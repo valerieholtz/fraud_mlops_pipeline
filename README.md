@@ -5,7 +5,7 @@ It includes data ingestion, training, experiment tracking, model registry, model
 
 ---
 
-## 📂 Project Structure
+##  Project Structure
 
 ```
 fraud_mlops_pipeline/
@@ -22,7 +22,7 @@ fraud_mlops_pipeline/
 │── data/
 │   ├── fraud_transactions.csv    # Reduced dataset for testing/CI
 │   ├── fraud.db                  # SQLite DB created by init_db.py
-│   ├── init_db.py                # Script to create database from CSV
+│   ├── generate_monthly_data.py  # Script to simulate 12 month of data for retraining
 │
 │── mlruns/                   # MLflow experiment & registry store
 │── .env.example              # Example environment variables
@@ -35,7 +35,7 @@ fraud_mlops_pipeline/
 
 ---
 
-## 🔑 Features
+##  Features
 
 - SQLite for persistent fraud data (`data/fraud.db`)
 - MLflow for experiment tracking, model logging, registry, and UI
@@ -54,7 +54,7 @@ fraud_mlops_pipeline/
 
 ---
 
-## 🌱 Purpose of `deploy_local_testing` Branch
+##  Purpose of `deploy_local_testing` Branch
 
 The `deploy_local_testing` branch is an **experimental extension** of the pipeline that goes beyond local deployment.  
 Here, the goal is to **simulate one full year of data drift and monthly retraining**, ensuring that the MLOps workflow can:  
@@ -70,7 +70,7 @@ It validates that the fraud detection API remains accessible and up to date afte
 
 ---
 
-## 📊 Architecture
+##  Architecture
 
 ```mermaid
 flowchart LR
@@ -86,7 +86,7 @@ flowchart LR
 
 ---
 
-## ⚙️ Setup
+##  Setup
 
 1. **Clone the repository**
    ```bash
@@ -96,7 +96,7 @@ flowchart LR
 
 2. **Create `.env` file (based on `.env.example`)**
    ```env
-   API_KEY=fdtge784h
+   API_KEY=...
    PORT=8000
    MLFLOW_TRACKING_URI=file:///workspace/mlruns
    ```
@@ -108,7 +108,7 @@ flowchart LR
 
 ---
 
-## ▶️ Usage
+##  Usage
 
 ### Start API + MLflow UI
 ```bash
@@ -141,7 +141,7 @@ curl -X POST "http://127.0.0.1:8000/predict"   -H "Content-Type: application/jso
 
 ---
 
-## 🔄 Automation with GitHub Actions
+##  Automation with GitHub Actions
 
 The project includes a workflow in `.github/workflows/mlops.yml` that automates:
 
@@ -155,7 +155,7 @@ This replaces the need for a heavy local Jenkins setup and runs entirely in GitH
 
 ---
 
-## 🔧 Developer Shortcuts (Makefile)
+##  Developer Shortcuts (Makefile)
 
 Instead of typing long Docker commands, use:
 ```bash
@@ -168,7 +168,7 @@ make promote   # run promotion
 
 ---
 
-## 🛠️ Next Steps
+##  Next Steps
 
 - **Monitoring:** Add Prometheus + Grafana to monitor API latency & drift  
 - **CI/CD:** Extend GitHub Actions to build and push Docker images to a registry  
