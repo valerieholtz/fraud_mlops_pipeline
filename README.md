@@ -5,7 +5,7 @@ It includes data ingestion, training, experiment tracking, model registry, model
 
 ---
 
-## 📂 Project Structure
+##  Project Structure
 
 ```
 fraud_mlops_pipeline/
@@ -35,7 +35,7 @@ fraud_mlops_pipeline/
 
 ---
 
-## 🔑 Features
+##  Features
 
 - SQLite for persistent fraud data (`data/fraud.db`)
 - MLflow for experiment tracking, model logging, registry, and UI
@@ -54,7 +54,7 @@ fraud_mlops_pipeline/
 
 ---
 
-## 🔄 Local Deployment with Self-Hosted Runner
+##  Local Deployment with Self-Hosted Runner
 
 In the `mlops_deploy_local` branch, the project extends the GitHub Actions workflow to support **local deployment** using a self-hosted runner.  
 In this setup, the **training and promotion jobs** run on GitHub-hosted runners as usual, but once a new model is promoted to Production, the workflow triggers an additional **deploy-local** job.  
@@ -74,7 +74,7 @@ In production, the same logic can be adapted to use a remote MLflow tracking ser
 
 ---
 
-## 📊 Architecture
+##  Architecture
 
 ```mermaid
 flowchart LR
@@ -90,7 +90,7 @@ flowchart LR
 
 ---
 
-## ⚙️ Setup
+##  Setup
 
 1. **Clone the repository**
    ```bash
@@ -112,7 +112,7 @@ flowchart LR
 
 ---
 
-## ▶️ Usage
+##  Usage
 
 ### Start API + MLflow UI
 ```bash
@@ -145,7 +145,7 @@ curl -X POST "http://127.0.0.1:8000/predict"   -H "Content-Type: application/jso
 
 ---
 
-## 🔄 Automation with GitHub Actions
+## Automation with GitHub Actions
 
 The project includes a workflow in `.github/workflows/mlops.yml` that automates:
 
@@ -158,7 +158,7 @@ This replaces the need for a heavy local Jenkins setup and runs entirely in GitH
 
 ---
 
-## 🔧 Developer Shortcuts (Makefile)
+##  Developer Shortcuts (Makefile)
 
 Instead of typing long Docker commands, use:
 ```bash
