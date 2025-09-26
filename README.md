@@ -35,7 +35,7 @@ fraud_mlops_pipeline/
 
 ---
 
-## 🔑 Features
+##  Features
 
 - SQLite for persistent fraud data (`data/fraud.db`)
 - MLflow for experiment tracking, model logging, registry, and UI
